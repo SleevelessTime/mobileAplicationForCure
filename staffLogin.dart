@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'machineStatusPage.dart'; // Giriş başarılı olduğunda yönlendirilecek sayfa
-import 'LoginPage.dart';
+import 'doctorLogin.dart'; // Doktor giriş sayfası için import
 
 class StaffLoginPage extends StatefulWidget {
   @override
@@ -16,7 +16,7 @@ class _StaffLoginPageState extends State<StaffLoginPage> {
   bool _loginFailed = false;
 
   Future<bool> authenticateStaff(String staffID, String password) async {
-    final response = await http.get(Uri.parse('http://10.0.2.2:5000/staffGiris'));
+    final response = await http.get(Uri.parse('http://127.0.0.1:5000/staffGiris'));
 
     if (response.statusCode == 200) {
       List<dynamic> staffMembers = jsonDecode(response.body);
@@ -121,11 +121,11 @@ class _StaffLoginPageState extends State<StaffLoginPage> {
                     onPressed: () {
                       Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(builder: (context) => LoginPage()),
+                        MaterialPageRoute(builder: (context) => DoctorLoginPage()),
                       );
                     },
                     child: Text(
-                      'Go to User Login',
+                      'Go to Doctor Login',
                       style: TextStyle(fontSize: 16),
                     ),
                   ),

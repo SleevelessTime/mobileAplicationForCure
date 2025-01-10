@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'HomePage.dart'; // Giriş başarılı olduğunda yönlendirilecek sayfa
 import 'RegisterPage.dart';
-import 'staffLogin.dart'; // Staff login sayfası import edildi
+import 'LoginSelectionPage.dart'; // LoginSelectionPage'i içe aktar
 
 class LoginPage extends StatelessWidget {
   @override
@@ -32,18 +32,54 @@ class _LoginFormState extends State<LoginForm> {
   late String _password;
   bool _loginFailed = false;
 
-  Future<bool> authenticateUser(String tc, String password) async {
-    final response = await http.get(Uri.parse('http://10.0.2.2:5000/kullaniciGiris'));
+  Future<Map<String, dynamic>?> authenticateUser(String tc, String password) async {
+    final response = await http.post(
+      Uri.parse('http://127.0.0.1:5000/kullaniciGiris'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'TC': tc, 'Sifre': password}),
+    );
 
     if (response.statusCode == 200) {
-      List<dynamic> users = jsonDecode(response.body);
-      for (var user in users) {
-        if (user['TC'] == tc && user['Sifre'] == password) {
-          return true;
+      final responseBody = jsonDecode(response.body);
+      if (responseBody is Map<String, dynamic> && responseBody.containsKey('KullaniciID')) {
+        final kullaniciID = responseBody['KullaniciID'].toString();
+        
+        // Log login time
+        await http.post(
+          Uri.parse('http://127.0.0.1:5004/login'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'KullaniciID': kullaniciID}),
+        );
+
+        // Kullanıcı bilgilerini almak için API çağrısı yapın
+        final userResponse = await http.get(
+          Uri.parse('http://127.0.0.1:5000/kullaniciBilgileri?KullaniciID=$kullaniciID'),
+        );
+
+        if (userResponse.statusCode == 200) {
+          final userResponseBody = jsonDecode(userResponse.body);
+          
+          if (userResponseBody is List && userResponseBody.isNotEmpty) {
+            final userData = userResponseBody.firstWhere(
+              (user) => user['KullaniciID'].toString() == kullaniciID,
+              orElse: () => {},
+            );
+            return {
+              'KullaniciID': kullaniciID,
+              'Adi': userData['Isim'] ?? 'Unknown User',
+            };
+          } else {
+            throw Exception('Kullanıcı bilgileri bulunamadı');
+          }
+        } else {
+          throw Exception('Kullanıcı bilgileri alınamadı');
         }
+      } else {
+        throw Exception('Kullanıcı ID bulunamadı');
       }
+    } else {
+      throw Exception('Başarısız giriş');
     }
-    return false;
   }
 
   @override
@@ -113,13 +149,24 @@ class _LoginFormState extends State<LoginForm> {
                   onPressed: () async {
                     if (_formKey.currentState!.validate()) {
                       _formKey.currentState!.save();
-                      bool isAuthenticated = await authenticateUser(_tc, _password);
-                      if (isAuthenticated) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => HomePage()),
-                        );
-                      } else {
+                      try {
+                        var user = await authenticateUser(_tc, _password);
+                        if (user != null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => HomePage(
+                                kullaniciID: user['KullaniciID'].toString(),
+                                kullaniciAdi: user['Adi'] ?? 'Unknown User',
+                              ),
+                            ),
+                          );
+                        } else {
+                          setState(() {
+                            _loginFailed = true;
+                          });
+                        }
+                      } catch (e) {
                         setState(() {
                           _loginFailed = true;
                         });
@@ -150,11 +197,11 @@ class _LoginFormState extends State<LoginForm> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => StaffLoginPage()),
+                      MaterialPageRoute(builder: (context) => LoginSelectionPage()),
                     );
                   },
                   child: Text(
-                    'Staff Login',
+                    'Login Selection',
                     style: TextStyle(fontSize: 16),
                   ),
                 ),

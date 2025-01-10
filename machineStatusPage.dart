@@ -44,7 +44,7 @@ class _MachineStatusPageState extends State<MachineStatusPage> {
 
   Future<List<dynamic>> fetchMakineData() async {
     try {
-      final response = await http.get(Uri.parse('http://10.0.2.2:5000/makine'));
+      final response = await http.get(Uri.parse('http://127.0.0.1:5000/makine'));
       if (response.statusCode == 200) {
         return json.decode(response.body) as List<dynamic>;
       } else {
@@ -58,7 +58,7 @@ class _MachineStatusPageState extends State<MachineStatusPage> {
 
   Future<List<dynamic>> fetchMakineHataData() async {
     try {
-      final response = await http.get(Uri.parse('http://10.0.2.2:5000/makineHata'));
+      final response = await http.get(Uri.parse('http://127.0.0.1:5000/makineHata'));
       if (response.statusCode == 200) {
         return json.decode(response.body) as List<dynamic>;
       } else {
@@ -73,7 +73,7 @@ class _MachineStatusPageState extends State<MachineStatusPage> {
   Future<void> updateHataDurumu(int hataID, String yeniDurum) async {
   try {
     final response = await http.put(
-      Uri.parse('http://10.0.2.2:5001/makineHata/$hataID'),
+      Uri.parse('http://127.0.0.1:5001/makineHata/$hataID'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
@@ -120,7 +120,7 @@ Future<void> addHata(int atelID) async {
               if (hataMesaji.isNotEmpty) {
                 try {
                   final response = await http.post(
-                    Uri.parse('http://10.0.2.2:5001/makineHata/$atelID'),
+                    Uri.parse('http://127.0.0.1:5001/makineHata/$atelID'),
                     headers: <String, String>{
                       'Content-Type': 'application/json; charset=UTF-8',
                     },
